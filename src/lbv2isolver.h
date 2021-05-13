@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "axioms.h"
+#include "tcc.h"
 #include "bv2int.h"
 #include "preprocessor.h"
 #include "postprocessor.h"

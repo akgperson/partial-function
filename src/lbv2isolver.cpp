@@ -718,137 +718,30 @@ bool LBV2ISolver::refine_final_bw(Op op, const TermVec &fterms, TermVec &outlemm
 
 void LBV2ISolver::run(string filename)
 {
-  ifstream file(filename);
-  string smtlib((istreambuf_iterator<char>(file)), istreambuf_iterator<char>());
-  // HACK keep the previously read smt-lib around
-  // it seems like MathSAT sometimes complains when parsing files in pieces like this
-  // this hack just re-reads the whole file again up to the current point
-  // but it also removes old assertions so that they're not asserted twice
-  // index zero contains processed smtlib, everything else is unprocessed
-  // so before reading it, everything should be processed and appended to the
-  // string in index 0
-  vector<string> previous_smtlib;
-  previous_smtlib.push_back("");
-
-  // NOTE: not a perfect regex accepts (check-sat 2) but ignores the two
-  //       shouldn't matter for our purposes
-  regex re(
-      "\\((push|pop|check-sat|check-sat-assuming)(\\s(\\d+|\\((.*)\\)\\s))?"
-      "\\)");
-
-  msat_config cfg = msat_create_config();
-  msat_env env = msat_create_env(cfg);
-  msat_destroy_config(cfg);
-
-  TermTranslator tr(solver_);
-
-  // Read input until a push/pop/check-sat/check-sat-assuming call
-  while (smtlib.length()) {
-    smatch match;
-    if (regex_search(smtlib, match, re) && match.size() > 1) {
-      msat_term msat_assertions =
-          msat_from_smtlib2(env, smtlib.substr(0, match.position()).c_str());
-      if (MSAT_ERROR_TERM(msat_assertions)) {
-        // fallback on HACK by reading whole file up to this point (without commands)
-        for (size_t i = 1; i < previous_smtlib.size(); ++i)
-        {
-          previous_smtlib[0] += remove_asserts(previous_smtlib[i]);
-        }
-        // remove all but the first element
-        previous_smtlib.erase(++(previous_smtlib.begin()), previous_smtlib.end());
-        string input = previous_smtlib[0] + smtlib.substr(0, match.position());
-        msat_assertions = msat_from_smtlib2(env, input.c_str());
-        if (MSAT_ERROR_TERM(msat_assertions))
-        {
-          cout << "Failed to read first part of smt-lib file:" << endl;
-          // cout << smtlib.substr(0, match.position()) << endl;
-          throw std::exception();
-        }
-      }
-      Term mterm(new MsatTerm(env, msat_assertions));
-      Term assertions = tr.transfer_term(mterm);
-      assert_formula(assertions);
-
-      // run command
-      std::string command = match.str(1);
-      if (command == "push") {
-        size_t num = match.size() > 3 ? stoi(match.str(3)) : 1;
-        push(num);
-      } else if (command == "pop") {
-        size_t num = match.size() > 3 ? stoi(match.str(3)) : 1;
-        pop(num);
-      } else if (command == "check-sat") {
-        Result res = check_sat();
-        print_result(res);
-      } else if (command == "check-sat-assuming") {
-        // split on whitespace
-        istringstream buffer(match.str(4));
-        vector<string> str_assumptions{ istream_iterator<string>(buffer),
-                                        istream_iterator<string>() };
-        TermVec assumptions;
-        for (size_t i = 0; i < str_assumptions.size(); i++) {
-          string str_term = str_assumptions[i];
-          if (str_term == "(not") {
-            if (i >= str_assumptions.size()) {
-              cout << "unexpected end of text after '" << str_term
-                   << "' in check-sat-assuming" << endl;
-            }
-            str_term += " " + str_assumptions[i + 1];
-            i++;
-          }
-          msat_term m_assump = msat_from_string(env, str_term.c_str());
-          if (MSAT_ERROR_TERM(m_assump)) {
-            cout << "error parsing check-sat-assuming argument: " << str_term
-                 << endl;
-            throw std::exception();
-          }
-          Term mterm_assump(new MsatTerm(env, m_assump));
-          assumptions.push_back(tr.transfer_term(mterm_assump));
-        }
-
-        Result res = check_sat_assuming(assumptions);
-        print_result(res);
-      } else {
-        cout << "Unhandled command in smt-lib input" << endl;
-        throw std::exception();
-      }
-
-      // save first part
-      previous_smtlib.push_back(smtlib.substr(0, match.position()));
-
-      // update string (remove up until past command)
-      size_t start = match.position() + match.length();
-      smtlib = smtlib.substr(start, smtlib.length() - start);
-    }
-    else
-    {
-      // no match
-      // NOTE: might miss the last part of the file if there's no check-sat
-      //       shouldn't matter
-      smtlib = "";
-    }
-  }
-
   // Previous implementation: No incremental support
-  // TermTranslator tr(solver_);
-  // FILE * f = fopen(filename.c_str(), "r");
-  // Term assert_term = parse_smt2(f, tr);
-  // assert_formula(assert_term);
-  // Result res = check_sat();
-  // cout << res << endl;
+  TermTranslator tr(solver_);
+  FILE * f = fopen(filename.c_str(), "r");
+  Term assert_term = parse_smt2(f, tr);
 
-  // if (res.is_sat()) {
-  //   if (opts.print_values) {
-  //     for (auto s : bv2int_->get_int_vars()) {
-  //       cout << "\t" << s << " := " << solver_->get_value(s) << endl;
-  //     }
-  //   }
-  //   if (opts.print_sigma_values) {
-  //     for (auto s : bv2int_->get_extra_vars()) {
-  //       cout << "\t" << s << " := " << solver_->get_value(s) << endl;
-  //     }
-  //   }
-  // }
+  TCCGenerator tccg(solver_, 1);
+  Term tcc1 = tccg.convert(assert_term);
+  solver_->assert_formula(solver_->make_term(Not, tcc1));
+  Result tcc_res = solver_->check_sat();
+//  cout << "f = " << assert_term << endl;
+//  cout << "negation of TCC is: " << tcc_res << endl;
+//  assert(tcc_res.is_unsat());
+  if (tcc_res.is_sat()) {
+    cout << "tcc = " << tcc1 << endl;
+    throw SmtException("TCC is not valid, so formula is not always defined.");
+    //TODO print TCC in error message
+  }
+  else {
+    solver_->reset_assertions();
+    solver_->assert_formula(assert_term);
+    Result res = solver_->check_sat();
+//    cout << "formula is: " << res << endl;
+    cout << res << endl;
+  }
 }
 
 void LBV2ISolver::run_on_stdin()
