@@ -12,6 +12,35 @@ TCCGenerator::TCCGenerator(SmtSolver &solver, bool b) : TreeWalker(solver, b)
 
 TCCGenerator::~TCCGenerator() { };
 
+smt::TreeWalkerStepResult TCCGenerator::visit_term(smt::Term &formula, smt::Term &t, std::vector<int> &path){
+  Sort boolsort = solver_->make_sort(BOOL); //TODO honestly uncertain abt this line
+
+  Op op = t->get_op();
+
+  if (!op.is_null()){
+    //TODO add for tcc buildup
+    if (op.prim_op == Mod || op.prim_op == Mod || op.prim_op == Mod) {
+      string var_name = string("b") + to_string(b_iter);
+      Term b = solver_->make_symbol(var_name, boolsort);
+      b_iter++;
+
+      pair<Term, vector<int>> occ;
+      occ.first = formula;
+      occ.second = path;
+
+      save_in_cache(b, occ);
+
+      fresh_bns = solver_->make_term(And, fresh_bns, solver_->make_term(Equal, b, bool_true_));
+//      Term condition = solver_->make_term(And, cached_tcc[0], cached_tcc[1], solver_->make_term(Distinct, cached_children[1], int_zero_));
+//      cache_[t] = condition;
+    }
+  }
+  else { //at leaf
+      tcc_cache_[t] = solver_->make_term(true); //change
+  }
+  return TreeWalker_Continue;
+}
+
 //smt::TreeWalkerStepResult TCCGenerator::visit_term(smt::Term &formula, smt::Term &t, std::vector<int> &path)
 //{
   //if (!preorder_) { //if current term not being visited for first time (on wind out) [Note: preorder_ true when current term is being visited for the first time]
