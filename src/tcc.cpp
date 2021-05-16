@@ -195,10 +195,9 @@ smt::TreeWalkerStepResult TCCGenerator::visit_term(smt::Term &formula, smt::Term
 smt::Term TCCGenerator::convert(smt::Term &t)
 {
   visit(t);
-  return t;
-//  Term res = cache_.at(t);
+  Term res = tcc_cache_.at(t);
 //  cout << "res = " << res << endl;
-//  return res;
+  return res;
 }
 
 smt::Term TCCGenerator::generate_tcc(smt::Term &t)
