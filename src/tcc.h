@@ -6,7 +6,7 @@ class TCCGenerator : smt::TreeWalker
   public:
     TCCGenerator(smt::SmtSolver &solver, bool b); //b option:
     ~TCCGenerator();
-    smt::TreeWalkerStepResult visit_term(smt::Term &formula, smt::Term &term, std::vector<int> &path) override; //check Term and Term what input and what output? math to function overriding? New ones?
+//    smt::TreeWalkerStepResult visit_term(smt::Term &formula, smt::Term &term, std::vector<int> &path) override; //check Term and Term what input and what output? math to function overriding? New ones?
     smt::Term generate_tcc(smt::Term &t); //in parenthesis? what feed to my function?
     smt::Term convert(smt::Term &t);
     int counter=0;

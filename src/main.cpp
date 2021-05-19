@@ -28,10 +28,10 @@ class BV2IntParser : public SmtLibReader
 
   void set_logic(const string & logic) override
   {
-    if (logic != "QF_BV" && logic != "QF_UFBV") {
-      throw SmtException("Only supported logics are QF_BV and QF_UFBV");
-    }
-    solver_->set_logic("QF_UFNIA");
+   // if (logic != "QF_BV" && logic != "QF_UFBV") {
+     // throw SmtException("Only supported logics are QF_BV and QF_UFBV");
+///    }
+    solver_->set_logic(logic);
   }
 };
 
@@ -82,6 +82,7 @@ int main(int argc, char ** argv)
     //   return 1;
     // }
     parser.parse(filename);
+//    cout << "pls reach" << endl;
   } else {
     cout << "usage: lazybv2int <filename>" << endl;
     // can add a run on stdin option if needed

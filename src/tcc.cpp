@@ -1,4 +1,7 @@
 #include "tcc.h"
+
+#include <iostream>
+
 using namespace smt;
 using namespace std;
 
@@ -11,8 +14,9 @@ TCCGenerator::TCCGenerator(SmtSolver &solver, bool b) : TreeWalker(solver, b)
 };
 
 TCCGenerator::~TCCGenerator() { };
-
+/*
 smt::TreeWalkerStepResult TCCGenerator::visit_term(smt::Term &formula, smt::Term &t, std::vector<int> &path){
+  cout << "visiting term" << endl;
   Sort boolsort = solver_->make_sort(BOOL); //TODO honestly uncertain abt this line
 
   Op op = t->get_op();
@@ -100,8 +104,7 @@ smt::TreeWalkerStepResult TCCGenerator::visit_term(smt::Term &formula, smt::Term
   }
   return TreeWalker_Continue;
 }
-
-//smt::TreeWalkerStepResult TCCGenerator::visit_term(smt::Term &formula, smt::Term &t, std::vector<int> &path)
+*/
 //{
   //if (!preorder_) { //if current term not being visited for first time (on wind out) [Note: preorder_ true when current term is being visited for the first time]
     //Op op = t->get_op();
