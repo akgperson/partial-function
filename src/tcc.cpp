@@ -14,7 +14,7 @@ TCCGenerator::TCCGenerator(SmtSolver &solver, bool b) : TreeWalker(solver, b)
 };
 
 TCCGenerator::~TCCGenerator() { };
-/*
+
 smt::TreeWalkerStepResult TCCGenerator::visit_term(smt::Term &formula, smt::Term &t, std::vector<int> &path){
   cout << "visiting term" << endl;
   Sort boolsort = solver_->make_sort(BOOL); //TODO honestly uncertain abt this line
@@ -104,7 +104,7 @@ smt::TreeWalkerStepResult TCCGenerator::visit_term(smt::Term &formula, smt::Term
   }
   return TreeWalker_Continue;
 }
-*/
+
 //{
   //if (!preorder_) { //if current term not being visited for first time (on wind out) [Note: preorder_ true when current term is being visited for the first time]
     //Op op = t->get_op();
@@ -197,6 +197,7 @@ smt::TreeWalkerStepResult TCCGenerator::visit_term(smt::Term &formula, smt::Term
 */
 smt::Term TCCGenerator::convert(smt::Term &t)
 {
+  cout << "called convert, calling visit" << endl;
   visit(t);
   Term res = tcc_cache_.at(t);
 //  cout << "res = " << res << endl;

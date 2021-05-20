@@ -718,6 +718,7 @@ bool LBV2ISolver::refine_final_bw(Op op, const TermVec &fterms, TermVec &outlemm
 
 void LBV2ISolver::run(string filename)
 {
+  cout << "called run" << endl;
   // Previous implementation: No incremental support
   TermTranslator tr(solver_);
   FILE * f = fopen(filename.c_str(), "r");
